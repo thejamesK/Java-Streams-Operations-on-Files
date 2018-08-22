@@ -75,39 +75,86 @@ public class Towar
         
     }
     
-    public static void saveToFile(Towar[] product, PrintWriter outS)
+    public static void saveToFile(Towar[] product, DataOutput outS) throws IOException
     {
-        outS.println(product.length);
-        GregorianCalendar calendar = new GregorianCalendar();
         for(int i = 0 ; i < product.length ; i++)
         {
-            calendar.setTime(product[i].getDate());
-            outS.println(product[i].getPrice()+"|"+product[i].getName()+"|"+calendar.get(Calendar.YEAR) + "|" + (calendar.get(Calendar.MONTH)+1) + "|" + calendar.get(Calendar.DAY_OF_MONTH));
+            product[i].saveData(outS);
         }
     }
     
-    public static Towar[] readFromFile(BufferedReader inS) throws  IOException
+    public static Towar[] readFromFile(RandomAccessFile RAF) throws  IOException
     {
-        int lenght = Integer.parseInt(inS.readLine());
-        Towar[] product = new Towar[lenght];
+        int howManyRecords = (int) (RAF.length() / Towar.RECORD_LENGHT);
+        Towar[] product = new Towar[howManyRecords];
         
         
-        for (int i = 0; i < lenght; i++)
+        for (int i = 0; i < howManyRecords; i++)
         {
-            String line = inS.readLine();
-            StringTokenizer tokens = new StringTokenizer(line, "|");
-            double price = Double.parseDouble(tokens.nextToken());
-            String name = tokens.nextToken();
-            int year = Integer.parseInt(tokens.nextToken());
-            int month = Integer.parseInt(tokens.nextToken());
-            int day = Integer.parseInt(tokens.nextToken());
-            
-            product[i] = new Towar(price, name, year, month, day);
+            product[i] = new Towar();
+            product[i].readData(RAF);
         }
         return product;
     }
     
+    public void saveData(DataOutput outS) throws IOException
+    {
+        outS.writeDouble(this.price);
+        
+        StringBuffer stringB = new StringBuffer(Towar.NAME_LENGHT);
+        stringB.append(this.name);
+        stringB.setLength(Towar.NAME_LENGHT);
+        
+        outS.writeChars(stringB.toString());
+        
+        GregorianCalendar calendar = new GregorianCalendar();
+        calendar.setTime(this.dateOut);
+        
+        
+        outS.writeInt(calendar.get(Calendar.YEAR));
+        outS.writeInt(calendar.get(Calendar.MONTH)+1);
+        outS.writeInt(calendar.get(Calendar.DAY_OF_MONTH));
+    }
+    
+    public void readData(DataInput inS) throws IOException
+    {
+        this.price = inS.readDouble();
+        
+        StringBuffer tString = new StringBuffer(Towar.NAME_LENGHT);
+        
+        for(int i = 0; i < Towar.NAME_LENGHT; i++)
+        {
+            char tCh = inS.readChar();
+            
+            if (tCh != '\0')
+                tString.append(tCh);
+            
+        }
+        
+        this.name = tString.toString();
+        
+        int year = inS.readInt();
+        int month = inS.readInt();
+        int day = inS.readInt();
+        
+        GregorianCalendar calendar = new GregorianCalendar(year, month-1, day);
+        this.dateOut = calendar.getTime();
+        
+    }
+    
+    public void readRecord(RandomAccessFile RAF, int n) throws IOException, MissingRecord
+    {
+        if(n <= RAF.length() / Towar.RECORD_LENGHT)
+        {
+            RAF.seek((n - 1)* Towar.RECORD_LENGHT);
+            this.readData(RAF);
+        }
+        else
+            throw new MissingRecord("Brak rekordu");
+    }
+    
     public static final int NAME_LENGHT = 30;
+    public static final int RECORD_LENGHT = (Character.SIZE * NAME_LENGHT + Double.SIZE + 3 * Integer.SIZE)/8;
     private double price; // 8 bajtow
     private String name; // NAME_LENGHT * 2 bajtow
     private Date dateOut; // 4 bajty + 4 + 4  RAZEM = 80 bajtow

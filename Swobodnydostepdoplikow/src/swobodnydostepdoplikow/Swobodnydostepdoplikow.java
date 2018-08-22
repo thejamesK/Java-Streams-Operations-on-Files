@@ -16,32 +16,46 @@ public class Swobodnydostepdoplikow
         
         try
         {
+           
+            RandomAccessFile RAF = new RandomAccessFile("database.txt", "rw");
+            
+            Towar.saveToFile(product, RAF);
+            RAF.seek(0);
+            
+            Towar [] products = Towar.readFromFile(RAF);
+            
+            for(int i = 0; i < products.length; i++)
+            {
+                System.out.println(products[i].getPrice());
+                System.out.println(products[i].getName());
+                System.out.println(products[i].getDate());
+                System.out.println("------------------------");
+            }
+            
             /*
-            DataOutputStream outS = new DataOutputStream(new FileOutputStream("new.txt"));
+            int n = 2;
+            RAF.seek((n - 1) * Towar.RECORD_LENGHT);
             
-            outS.writeDouble(12412.123);
-            outS.close();
+            Towar a = new Towar();
+            a.readData(RAF);
             
-            DataInputStream inS = new DataInputStream(new FileInputStream("new.txt"));
             
-            System.out.println(inS.readDouble());
-            inS.close();
+            System.out.println(a);
             */
             
-            RandomAccessFile RAF = new RandomAccessFile("new.txt", "rw");
-            
-            RAF.writeDouble(123.42);
-            RAF.writeDouble(41.23);
-            RAF.writeChars("Aala   ");
-            
-            System.out.println(RAF.getFilePointer());
-            
-            RAF.seek(16);
-            System.out.println(RAF.readChar());
-            
-            
-            System.out.println(Double.SIZE/8 + Integer.SIZE/8);
-            
+            try
+            {
+                Towar b = new Towar();
+
+                b.readRecord(RAF, 123);
+                System.out.println(b);
+
+                System.out.println("lala");
+            }
+            catch(MissingRecord err)
+            {
+                System.out.println(err.getMessage());   
+            }
             RAF.close();
         }
         

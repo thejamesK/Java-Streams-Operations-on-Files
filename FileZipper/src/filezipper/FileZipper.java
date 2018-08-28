@@ -2,7 +2,10 @@ package filezipper;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.io.File;
+import java.util.ArrayList;
 import javax.swing.*;
+import sun.font.LayoutPathImpl;
 
 
 public class FileZipper extends JFrame
@@ -30,6 +33,7 @@ public class FileZipper extends JFrame
         addButton = new JButton(addAction);
         deleteButton = new JButton(deleteAction);
         zipButton = new JButton(zipAction);
+        JScrollPane scroll = new JScrollPane(list);
         
         list.setBorder(BorderFactory.createEtchedBorder());
         GroupLayout layout = new GroupLayout(this.getContentPane());
@@ -40,14 +44,14 @@ public class FileZipper extends JFrame
         
         layout.setHorizontalGroup(
                 layout.createSequentialGroup()
-                .addComponent(list, 100, 150, Short.MAX_VALUE)
+                .addComponent(scroll, 100, 150, Short.MAX_VALUE)
                 .addContainerGap(0, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup().addComponent(addButton).addComponent(deleteButton).addComponent(zipButton))
                 );
         
         layout.setVerticalGroup(
                 layout.createParallelGroup()
-                .addComponent(list, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(scroll, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(layout.createSequentialGroup().addComponent(addButton).addComponent(deleteButton).addGap(5, 40, Short.MAX_VALUE).addComponent(zipButton))
                 );
         
@@ -57,13 +61,31 @@ public class FileZipper extends JFrame
         this.pack();
     }
     
-    private JList list = new JList();
+    private DefaultListModel listModel = new DefaultListModel()
+    {
+        @Override
+        public void addElement(Object obj) 
+        {
+            listA.add(obj);
+            super.addElement(((File)obj).getName());
+        }
+        
+        @Override
+        public Object get(int index) 
+        {
+            return listA.get(index);
+        }
+            
+        
+        ArrayList listA = new ArrayList();
+    };
+    private JList list = new JList(listModel);
     private JButton addButton;
     private JButton deleteButton;
     private JButton zipButton;
     
     private JMenuBar menuBar = new JMenuBar();
-     
+    private JFileChooser chooser = new JFileChooser();
     
             
             
@@ -95,12 +117,44 @@ public class FileZipper extends JFrame
         public void actionPerformed(ActionEvent ae) 
         {
             if(ae.getActionCommand().equals("Add"))
-                System.out.println("Add");
+                addFilesToZip();
             else if(ae.getActionCommand().equals("Delete"))
                 System.out.println("Delete");
             else if(ae.getActionCommand().equals("Zip"))
                 System.out.println("Zip");
            
+        }
+        
+        
+        private void addFilesToZip()
+        {
+            chooser.setCurrentDirectory(new File(System.getProperty("user.dir")));
+            chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+            chooser.setMultiSelectionEnabled(enabled);
+            
+            int tmp = chooser.showDialog(rootPane, "Add to zip");
+            
+            if (tmp == JFileChooser.APPROVE_OPTION)
+            {
+                File[] path = chooser.getSelectedFiles();
+                
+                for(int i = 0; i < path.length; i++)
+                    if(!isFileRepeated(path[i].getPath()))
+                        listModel.addElement(path[i]);
+                
+            }
+        }
+        
+        private boolean isFileRepeated(String testedFile)
+        {
+            for(int i = 0; i < listModel.getSize(); i++)
+            {
+                if(((File)listModel.get(i)).getPath().equals(testedFile))
+                    return true;
+                    
+            }
+            
+            return false;
         }
     }
         
